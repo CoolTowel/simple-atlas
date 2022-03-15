@@ -7,19 +7,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.scale as mscale
 import matplotlib.font_manager as fm
-from moon import draw_moon
-from moon_logo import draw_moon_logo
-from stereographic import StereographicZenithScale
+from util import *
 import time as pytime
 start_time = pytime.time()
-
 
 font_path = './fonts/Libertinus-7.040/static/OTF/'
 font_files = fm.findSystemFonts(fontpaths=font_path)
 for font_file in font_files:
     fm.fontManager.addfont(font_file)
     
-mscale.register_scale(StereographicZenithScale)
+mscale.register_scale(stereographic.StereographicZenithScale)
 red = '#C80815'
 light_blue = '#4673bc'
 dark_yellow = '#d4b300'
@@ -30,7 +27,7 @@ def skychart(time=None, location=None, show=False):
     # time
     if time is None:
         time = Time.now()
-        # time = Time('2022-2-28 00:00:00')
+        # time = Time('2022-12-23 8:00:00')
     # oberving location
     if location is None:
         loc_lat = 25.62
@@ -68,22 +65,17 @@ def skychart(time=None, location=None, show=False):
     ax.plot([np.pi/2,np.pi/2*3],[0.04,0.04], c=dark_yellow, lw=0.5,zorder=0)
 
     # equator
-    eq_lon=np.arange(0,360,1)
+    eq_lon=np.arange(0,361,1)
     eq_lat = np.zeros_like(eq_lon)
     eq = SkyCoord(eq_lon,eq_lat,unit=u.deg,frame=loc_gcrs).transform_to(az_frame)
     eq = np.array([eq.az.value, 90 - eq.alt.value])/180 * np.pi
     ax.plot(eq[0],eq[1],zorder=-1,c=light_blue,lw=plt.rcParams['axes.linewidth'])
 
     # moon
-    l_p, s_p = draw_moon_logo(az_frame, moon, sun, loc_gcrs,zoom_factor=15, resolution=40, light_color=0.9)
-    ax.add_patch(l_p)
-    ax.add_patch(s_p)
+    moon_logo.draw_moon_logo(ax, az_frame, moon, sun, loc_gcrs,zoom_factor=10, resolution=40, light_color=0.9)
 
     # Bright star
-    bsc = Table.read('data/Yale_Bright_Star_Catalog_V5_9095.fits')
-    stars_3 = bsc[bsc['Vmag']<3]
-    stars = SkyCoord(stars_3['_RAJ2000'], stars_3['_DEJ2000'], unit = 'degree', frame='icrs' ).transform_to(az_frame)
-    ax.scatter(stars.az.rad, np.pi/2-stars.alt.rad,s=0.1, c='white')
+    star.draw_star(ax,az_frame)
 
     plt.tight_layout()
     if show is True:
