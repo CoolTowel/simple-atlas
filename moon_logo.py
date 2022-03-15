@@ -14,7 +14,6 @@ mscale.register_scale(StereographicZenithScale)
 
 moon_radi = (1737.10 * u.km).to(u.au)
 
-
 def moon_edge(resolution=50):
     '''
     The outline of moon. return an array of its pixel coordinates [X,Y] with 2 column
@@ -43,7 +42,7 @@ def draw_moon_logo(az_frame,
                    loc_gcrs,
                    zoom_factor=20,
                    resolution=50,
-                   light_color=0.75,
+                   light_color=0.9,
                    shadow_color=0.25,
                    k=1.005):
     '''
@@ -173,10 +172,8 @@ if __name__ == '__main__':
     obsgeoloc, obsgeovel = location.get_gcrs_posvel(time)
     loc_gcrs = GCRS(obstime=time, obsgeoloc=obsgeoloc, obsgeovel=obsgeovel)
     az = AltAz(obstime=time, location=location)
-
     sun = get_body('sun', time, location)
     moon = get_moon(time, location)
-
     r = np.linspace(30, 60, 50) / 180 * np.pi
     theta = np.linspace(0, 2 * np.pi, 50)
     plt.figure()
@@ -190,7 +187,7 @@ if __name__ == '__main__':
     plt.yscale('stereographiczenith')
     ax = plt.gca()
     ax.set_theta_zero_location("N")
-    l_p, s_p = draw_moon_logo(az, moon, sun,resolution = 50)
+    l_p, s_p = draw_moon_logo(az, moon, sun, loc_gcrs, resolution = 50)
     ax.add_patch(l_p)
     ax.add_patch(s_p)
-    plt.show()
+    # plt.show()
