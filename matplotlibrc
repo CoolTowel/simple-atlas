@@ -16,6 +16,6 @@ xtick.color:  None   # color of the ticks
 xtick.labelcolor:    white # color of the tick labels or inherit from xtick.color
 ytick.color:         white   # color of the ticks
 ytick.labelcolor:    inherit # color of the tick labels or inherit from ytick.color
-# lines.markeredgewidth: 0.0
+lines.markeredgewidth: 0.0
 savefig.bbox: tight
 savefig.pad_inches: 0.05
