@@ -3,7 +3,8 @@ from astropy.table import Table
 import numpy as np
 
 
-def bv2rgb(stars, key = 'B-V'):  # Thanks to https://stackoverflow.com/a/43105142
+def bv2rgb(stars, key='B-V'):  # Thanks to https://stackoverflow.com/a/43105142
+
     def func(bv):
         if bv < -0.40: bv = -0.40
         if bv > 1.98: bv = 1.98
@@ -44,29 +45,23 @@ def bv2rgb(stars, key = 'B-V'):  # Thanks to https://stackoverflow.com/a/4310514
             b = 0.63 - (0.6 * t * t)
 
         return (r, g, b)
+
     bv = np.array(stars[key])
     r, b, g = np.vectorize(func)(np.array(bv))
     return np.vstack((r, b, g)).T
 
 
-def mag2size(
-    stars,
-    key = 'Vmag',
-    max_size=150,
-    min_size=0.5
-):  # A linear convert vmag to size, when vmag = -2, size = max_szie. In fact the max size would never be reached because there is no star brighter than sirius whose Vmag is -1.5.
+def mag2size(stars, key='Vmag', k_size=0.4, max_size=40, min_size=0.3):
+    ''' A non-linear convert vmag to size, when vmag = -2, size = max_szie. In fact the max size would never be reached because there is no star brighter than sirius whose Vmag is -1.5.'''
     mag = np.array(stars[key])
+    mag = mag - mag.min()  # normalize
     mag_lim = mag.max()
-    def func(a):
-        return max_size*np.exp(-2-a)
-    offset = min_size- func(mag_lim)
-
-    # s = max_size + (-2 - np.array(mag)) * (max_size - min_size) / (mag_lim + 2)
-    s = func(mag) + offset
+    a = (min_size - max_size) / (np.exp(-k_size * mag_lim) - 1)
+    s = a * (np.exp(-k_size * mag) - 1) + max_size
     return s
 
 
-def draw_star(ax, az_frame, mag_lim=4.5, zoom_factor=1):
+def draw_star(ax, az_frame, mag_lim=4, k_size= 0.4, zoom_factor=1):
     bsc = Table.read('data/XHIP_6.fits')
     stars = bsc[bsc['Vmag'] < mag_lim]
     stars_coord = SkyCoord(stars['RAdeg'],
@@ -74,11 +69,10 @@ def draw_star(ax, az_frame, mag_lim=4.5, zoom_factor=1):
                            unit='degree',
                            frame='icrs').transform_to(az_frame)
     colors = bv2rgb(stars)
-    sizes = mag2size(stars)
+    sizes = mag2size(stars, k_size=k_size)
     ax.scatter(stars_coord.az.rad,
                np.pi / 2 - stars_coord.alt.rad,
-               s=sizes,
+               s=zoom_factor*sizes,
                c=colors,
                linewidths=0.0,
                edgecolors=None)
-
