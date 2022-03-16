@@ -20,7 +20,7 @@ def moon_edge(resolution=50):
 
 def moon_terminator(resolution=50, b=0.5, k=1.005):
     '''
-    The ellipse of moon's terminator. return an array of its pixel coordinates [X,Y] with 2 column. The points are not uniform in the arc.
+    The ellipse of moon's terminator. A factor k was applying to the radius to make the final looks more real. return an array of its pixel coordinates [X,Y] with 2 column. The points are not uniform in the arc. 
     '''
     t = np.linspace(0, np.pi * 2.0, resolution)
     t = t.reshape((len(t), 1))
