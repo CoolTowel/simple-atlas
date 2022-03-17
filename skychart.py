@@ -9,6 +9,10 @@ import matplotlib.scale as mscale
 import matplotlib.font_manager as fm
 from util import *
 
+import os
+
+datapath = os.path.dirname(__file__) + '/data/'
+
 import time as pytime
 
 start_time = pytime.time()
@@ -23,33 +27,58 @@ red = '#C80815'
 light_blue = '#4673bc'
 dark_yellow = '#d4b300'
 
+
 class ISOCustom(TimeISO):
     name = 'iso_custom'
-    subfmts = (('date',
-                '%Y-%m-%d',
-                '{year:d}-{mon:02d}-{day:02d}'),
-               ('midnight',
-                '%Y-%m-%d 00:00:00',
-                '{year:d}-{mon:02d}-{day:02d} 00:00:00'),
-               ('h',
-                '%H',
-                '{hour:02d}'))
+    subfmts = (('date', '%Y-%m-%d %H:%M',
+                '{year:d}-{mon:02d}-{day:02d} {hour:02d}:{min:02d}'),
+               ('midnight', '%Y-%m-%d 00:00:00',
+                '{year:d}-{mon:02d}-{day:02d} 00:00:00'), ('h', '%H',
+                                                           '{hour:02d}'))
+
+
+lms = []
+for f in ['lm1.txt', 'lm2.txt', 'lm3.txt']:
+    lms.append(np.loadtxt(datapath + f))
+
+cons_lines = np.load(datapath + 'conslines.npy')
+
+stars = Table.read(datapath + 'XHIP_7.fits')
+
 
 def skychart(time=None, location=None, show=False):
     '''
     Return skychart at a time in a location. Time should be an astropy.time.Time instance and location should be an astropy.coordinates.EarthLocation instance.'''
     # time
+
     if time is None:
-        time = Time.now() + 5 * u.h
+        time = Time.now() + 1 * u.h
         # time = Time('2022-12-23 8:00:00')
     # oberving location
     if location is None:
-        loc_lat = 25.62
-        loc_lon = 101.13
-        loc_height = 2223
+        loc_lat = 52.15485022021291
+        loc_lon = 4.483882499710578
+        loc_height = 0
         location = EarthLocation(lat=loc_lat * u.deg,
                                  lon=loc_lon * u.deg,
                                  height=loc_height * u.m)
+
+    fig = plt.figure(figsize=(7, 7), dpi=100)
+
+    local_time = time + 1 * u.h
+    fig.suptitle('{}, at Oude Sterrewacht, Leiden'.format(
+        local_time.to_value('iso_custom')),
+                 y=0.95,
+                 color='white')
+    ax = fig.add_subplot(111, projection='polar')
+    ax.set_rscale('stereographiczenith')
+    ax.xaxis.grid(False)
+    ax.yaxis.grid(False)
+    ax.set_yticks([])
+    ax.set_ylim(0, np.pi / 2)
+    ax.set_theta_zero_location("N")
+    ax.set_xticks([0, np.pi / 2, np.pi, np.pi / 2 * 3], ('N', 'E', 'S', 'W'))
+    ax.get_xticklabels()[0].set_color(red)
 
     obsgeoloc, obsgeovel = location.get_gcrs_posvel(time)
     loc_gcrs = GCRS(obstime=time, obsgeoloc=obsgeoloc, obsgeovel=obsgeovel)
@@ -60,19 +89,6 @@ def skychart(time=None, location=None, show=False):
     # the celestial body
     sun = get_body('sun', time, location)
     moon = get_moon(time, location)
-
-    fig = plt.figure(figsize=(7,7), dpi=100)
-    local_time = time
-    fig.suptitle(time.to_value('iso_custom'),color='white')
-    ax = fig.add_subplot(111, projection='polar')
-    ax.set_rscale('stereographiczenith')
-    ax.xaxis.grid(False)
-    ax.yaxis.grid(False)
-    ax.set_yticks([])
-    ax.set_ylim(0, np.pi / 2)
-    ax.set_theta_zero_location("N")
-    ax.set_xticks([0, np.pi / 2, np.pi, np.pi / 2 * 3], ('N', 'E', 'S', 'W'))
-    ax.get_xticklabels()[0].set_color(red)
 
     # zenith
     # the marker '+' looks ugly in polar projection
@@ -95,23 +111,26 @@ def skychart(time=None, location=None, show=False):
             c=light_blue,
             lw=plt.rcParams['axes.linewidth'])
 
-    # moon
-    moon_logo.draw_moon_logo(ax,
-                             location,
-                             az_frame,
-                             moon,
-                             sun,
-                             loc_gcrs,
-                             zoom_factor=15,
-                             resolution=40)
+    #moon
+
+    moon_logo.draw_moon_logo(
+        ax,
+        az_frame,
+        moon,
+        sun,
+        loc_gcrs,
+        lms,
+        zoom_factor=15,
+        resolution=40)
 
     # Bright star
-    star.draw_star(ax, az_frame)
+    star.draw_star(ax, az_frame, stars)
 
     # constellations
-    constellation.draw_constellation(ax, az_frame)
+    constellation.draw_constellation(ax, az_frame, cons_lines)
 
     plt.tight_layout()
+
     if show is True:
         plt.show()
 
@@ -119,15 +138,23 @@ def skychart(time=None, location=None, show=False):
 
 
 if __name__ == '__main__':
-    time = Time('2022-1-2 00:00:00')-6.742*u.h
-    for i, t in enumerate(time+np.arange(365)*u.day) :
-        fig = skychart(time = t, show=False)
-        save_path = './test/ani_365/{}.png'.format(i)
-        fig.savefig(save_path,dpi=300)
-        plt.close()
-    print("--- %s seconds ---" % (pytime.time() - start_time))
+    time = Time('2022-1-1 21:00:00')
+    loc_lat = 52.15485022021291
+    loc_lon = 4.483882499710578
+    loc_height = 0
+    location = EarthLocation(lat=loc_lat * u.deg,
+                             lon=loc_lon * u.deg,
+                             height=loc_height * u.m)
+    
+    # for i, t in enumerate(time + np.arange(10) * u.day):
+    #     fig = skychart(time=t, location=location, show=False)
+    #     save_path = './test/ani_365/{}.png'.format(i)
+    #     fig.savefig(save_path, dpi=300)
+    #     plt.close()
 
-    # fig = skychart(time=Time('2022-1-1 00:00:00')-6.742*u.h+2*u.day,show=True)
-    # save_path = './test/test.png'
-    # # fig.savefig(save_path,dpi=300)
     # print("--- %s seconds ---" % (pytime.time() - start_time))
+
+    fig = skychart(time=Time.now(),location=location,show=True)
+    save_path = './test/test.png'
+    # fig.savefig(save_path,dpi=300)
+    print("--- %s seconds ---" % (pytime.time() - start_time))

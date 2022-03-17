@@ -35,11 +35,11 @@ def moon_terminator(resolution=50, b=0.5, k=1.005):
 
 
 def draw_moon_logo(ax,
-                   location,
                    az_frame,
                    moon,
                    sun,
                    loc_gcrs,
+                   lms,
                    zoom_factor=20,
                    resolution=50,
                    light_color=np.array([1.0, 253 / 255, 230 / 255]),
@@ -172,33 +172,32 @@ def draw_moon_logo(ax,
                                           zorder=999)
         ax.add_patch(shadow_patch)
 
-        # Lunar mare patch
-        moon_now = get_moon(time=moon.obstime)
-        moon_1h = get_moon(time=moon.obstime + 1 * u.h)
-        # a very dirty way to calculate moon's north pole's postion angle, without considering moon's libration.
-        pos_angle = position_angle(moon_now.ra, moon_now.dec, moon_1h.ra,
-                                   moon_1h.dec) - np.pi / 2 * u.rad
-        # affine transformation for rotating by pos_angle
-        NP_rotation = np.array([[np.cos(pos_angle), -np.sin(pos_angle)],
-                                [np.sin(pos_angle),
-                                 np.cos(pos_angle)]])
-        for f in ['lm1.txt', 'lm2.txt', 'lm3.txt']:
-            lm = np.loadtxt(datapath + f)
-            lm = np.dot(NP_rotation, lm.T)
-            lm = moon_wcs.pixel_to_world(lm[0], lm[1])
-            lm = SkyCoord(lm.ra, lm.dec, frame=loc_gcrs)
-            lm = lm.transform_to(az_frame)
-            lm = np.array([lm.az.value, 90 - lm.alt.value]).T
-            lm = lm / 180 * np.pi
-            lm_codes = np.ones(len(lm),
-                               dtype=mpath.Path.code_type) * mpath.Path.LINETO
-            lm_codes[0] = mpath.Path.MOVETO
-            lm_path = mpath.Path(lm, lm_codes)
-            lm_patch = mpatches.PathPatch(lm_path,
-                                          facecolor=[0.5, 0.5, 0.5, 0.6],
-                                          linewidth=0,
-                                          zorder=1000)
-            ax.add_patch(lm_patch)
+    # Lunar mare patch
+    moon_now = get_moon(time=moon.obstime)
+    moon_1h = get_moon(time=moon.obstime + 1 * u.h)
+    # a very dirty way to calculate moon's north pole's postion angle, without considering moon's libration.
+    pos_angle = position_angle(moon_now.ra, moon_now.dec, moon_1h.ra,
+                                moon_1h.dec) - np.pi / 2 * u.rad
+    # affine transformation for rotating by pos_angle
+    NP_rotation = np.array([[np.cos(pos_angle), -np.sin(pos_angle)],
+                            [np.sin(pos_angle),
+                                np.cos(pos_angle)]])
+    for lm in lms:
+        lm = np.dot(NP_rotation, lm.T)
+        lm = moon_wcs.pixel_to_world(lm[0], lm[1])
+        lm = SkyCoord(lm.ra, lm.dec, frame=loc_gcrs)
+        lm = lm.transform_to(az_frame)
+        lm = np.array([lm.az.value, 90 - lm.alt.value]).T
+        lm = lm / 180 * np.pi
+        lm_codes = np.ones(len(lm),
+                            dtype=mpath.Path.code_type) * mpath.Path.LINETO
+        lm_codes[0] = mpath.Path.MOVETO
+        lm_path = mpath.Path(lm, lm_codes)
+        lm_patch = mpatches.PathPatch(lm_path,
+                                        facecolor=[0.5, 0.5, 0.5, 0.6],
+                                        linewidth=0,
+                                        zorder=1000)
+        ax.add_patch(lm_patch)
 
 
 if __name__ == '__main__':

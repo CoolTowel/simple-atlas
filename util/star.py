@@ -55,7 +55,7 @@ def bv2rgb(stars, key='B-V'):  # Thanks to https://stackoverflow.com/a/43105142
     return np.vstack((r, b, g)).T
 
 
-def mag2size(stars, key='Vmag', k_size=0.4, max_size=40, min_size=0.3):
+def mag2size(stars, key='Vmag', k_size=0.6, max_size=50, min_size=0.2):
     ''' A non-linear convert vmag to size, when vmag = -2, size = max_szie. In fact the max size would never be reached because there is no star brighter than sirius whose Vmag is -1.5.'''
     mag = np.array(stars[key])
     mag = mag - mag.min()  # normalize
@@ -67,11 +67,12 @@ def mag2size(stars, key='Vmag', k_size=0.4, max_size=40, min_size=0.3):
 
 def draw_star(ax,
               az_frame,
-              mag_lim=5,
+              stars,
+              mag_lim=4.8,
               k_size=0.4,
               zoom_factor=1,
               constline=True):
-    stars = Table.read(datapath + 'XHIP_7.fits')
+    # stars = Table.read(datapath + 'XHIP_7.fits')
     # stars = bsc[bsc['Vmag'] < mag_lim]
     stars_coord = SkyCoord(stars['RAdeg'],
                            stars['DEdeg'],

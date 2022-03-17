@@ -10,10 +10,11 @@ datapath = os.path.dirname(path) + '/data/'
 def draw_constellation(
     ax,
     az_frame,
+    lines,
     lineswitdhs=0.6,
     color=[0.4] * 3,
 ):
-    lines = np.load(datapath + 'conslines.npy')
+    # lines = np.load(datapath + 'conslines.npy')
     star1_coord = SkyCoord(lines[:, 0, 0], lines[:, 0, 1],
                            unit='degree').transform_to(az_frame)
     star2_coord = SkyCoord(lines[:, 1, 0], lines[:, 1, 1],
