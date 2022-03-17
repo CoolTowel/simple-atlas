@@ -51,4 +51,4 @@ lines_xy = np.hstack((np.array([star1_coord.ra.degree,
                       np.array([star2_coord.ra.degree,
                                 star2_coord.dec.degree]).T[:, np.newaxis, :]))
 print(lines_xy)
-np.save(path+'/conslines.npy',lines_xy)
+np.save(path + '/conslines.npy', lines_xy)
