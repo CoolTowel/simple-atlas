@@ -48,6 +48,10 @@ def draw_moon_logo(ax,
     '''
     Get the matplotlib patch of moon's light and shadow in the latitude-zenith coordinate. Return in tuple
     '''
+    moon_lat = moon.transform_to(az_frame).alt.degree
+    if moon_lat<-10:
+        return None
+
     moon_ang_radi = np.arcsin(moon_radi / moon.distance.to(u.au)).to(u.deg)
 
     FOV = moon_ang_radi.value * 2 * zoom_factor  # field of view for our imaginary fits image(also the enlarged moon size, if zoom_factor is not 1), diameter in degree
@@ -81,7 +85,6 @@ def draw_moon_logo(ax,
     edge = moon_edge(resolution=resolution)
     termi = moon_terminator(resolution=resolution, k=k, b=b)
     # k, terminator radius scale. Making the radius of terminator slighly larger than moon angular size to make simulate the true moon phase
-    cross_x = np.sqrt((b**2 - k**2) / (b**2 - 1))
     cross_y = np.sqrt((k**2 - 1) / (b**2 - 1))
 
     if np.cos(moon_phase) > 0:
@@ -89,6 +92,7 @@ def draw_moon_logo(ax,
             light = None
             shadow = edge
         else:
+            cross_x = np.sqrt((b**2 - k**2) / (b**2 - 1))
             moon_edge_light = edge[edge[:, 1] > cross_y, :]
             moon_edge_light = np.vstack(([cross_x, cross_y], moon_edge_light))
             moon_terminator_line = termi[termi[:, 1] > cross_y, :]
@@ -107,6 +111,7 @@ def draw_moon_logo(ax,
             light = edge
             shadow = None
         else:
+            cross_x = np.sqrt((b**2 - k**2) / (b**2 - 1))
             cross_y = -cross_y
             indices = np.where(edge[:, 1] <= cross_y)[0]
             lower = 1 - (len(edge[:, 0]) - indices[-1])
@@ -168,9 +173,10 @@ def draw_moon_logo(ax,
         ax.add_patch(shadow_patch)
 
         # Lunar mare patch
-        moon_1h = get_moon(time=moon.obstime + 1 * u.h, location=location)
-        # a very dirty way to calculate moon's north pole's postion angle, Without considering moon's libration.
-        pos_angle = position_angle(moon.ra, moon.dec, moon_1h.ra,
+        moon_now = get_moon(time=moon.obstime)
+        moon_1h = get_moon(time=moon.obstime + 1 * u.h)
+        # a very dirty way to calculate moon's north pole's postion angle, without considering moon's libration.
+        pos_angle = position_angle(moon_now.ra, moon_now.dec, moon_1h.ra,
                                    moon_1h.dec) - np.pi / 2 * u.rad
         # affine transformation for rotating by pos_angle
         NP_rotation = np.array([[np.cos(pos_angle), -np.sin(pos_angle)],
@@ -202,7 +208,7 @@ if __name__ == '__main__':
     import matplotlib.scale as mscale
     from stereographic import StereographicZenithScale
     mscale.register_scale(StereographicZenithScale)
-    time = Time('2022-3-10 12:00:00')
+    time = Time('2022-1-1 00:00:00')-6.742*u.h+2*u.day
     # oberving location
     loc_lat = 25.62
     loc_lon = 101.13

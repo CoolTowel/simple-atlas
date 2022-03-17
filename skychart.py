@@ -1,5 +1,5 @@
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz, ICRS, GCRS, get_moon, get_body
-from astropy.time import Time
+from astropy.time import Time, TimeISO
 from astropy.wcs import WCS
 from astropy.table import Table
 import astropy.units as u
@@ -23,6 +23,17 @@ red = '#C80815'
 light_blue = '#4673bc'
 dark_yellow = '#d4b300'
 
+class ISOCustom(TimeISO):
+    name = 'iso_custom'
+    subfmts = (('date',
+                '%Y-%m-%d',
+                '{year:d}-{mon:02d}-{day:02d}'),
+               ('midnight',
+                '%Y-%m-%d 00:00:00',
+                '{year:d}-{mon:02d}-{day:02d} 00:00:00'),
+               ('h',
+                '%H',
+                '{hour:02d}'))
 
 def skychart(time=None, location=None, show=False):
     '''
@@ -50,7 +61,9 @@ def skychart(time=None, location=None, show=False):
     sun = get_body('sun', time, location)
     moon = get_moon(time, location)
 
-    fig = plt.figure(figsize=(8, 8), dpi=100)
+    fig = plt.figure(figsize=(7,7), dpi=100)
+    local_time = time
+    fig.suptitle(time.to_value('iso_custom'),color='white')
     ax = fig.add_subplot(111, projection='polar')
     ax.set_rscale('stereographiczenith')
     ax.xaxis.grid(False)
@@ -106,7 +119,15 @@ def skychart(time=None, location=None, show=False):
 
 
 if __name__ == '__main__':
-    fig = skychart(show=True)
-    save_path = './test/test.png'
-    # fig.savefig(save_path,dpi=300)
+    time = Time('2022-1-2 00:00:00')-6.742*u.h
+    for i, t in enumerate(time+np.arange(365)*u.day) :
+        fig = skychart(time = t, show=False)
+        save_path = './test/ani_365/{}.png'.format(i)
+        fig.savefig(save_path,dpi=300)
+        plt.close()
     print("--- %s seconds ---" % (pytime.time() - start_time))
+
+    # fig = skychart(time=Time('2022-1-1 00:00:00')-6.742*u.h+2*u.day,show=True)
+    # save_path = './test/test.png'
+    # # fig.savefig(save_path,dpi=300)
+    # print("--- %s seconds ---" % (pytime.time() - start_time))

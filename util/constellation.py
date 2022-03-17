@@ -23,6 +23,8 @@ def draw_constellation(
                    np.pi / 2 - star1_coord.alt.rad]).T[:, np.newaxis, :],
          np.array([star2_coord.az.rad,
                    np.pi / 2 - star2_coord.alt.rad]).T[:, np.newaxis, :]))
+    above_horizen = np.logical_or(lines_xy[:,0,1]<np.pi/2,lines_xy[:,1,1]<np.pi/2)
+    lines_xy = lines_xy[above_horizen,:,:]
     ax.add_collection(
         LineCollection(lines_xy,
                        linewidths=lineswitdhs,
