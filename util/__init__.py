@@ -1,1 +1,1 @@
-__all__ = ['moon_logo', 'moon', 'star', 'stereographic']
+__all__ = ['moon_logo', 'moon', 'star', 'stereographic', 'constellation']

@@ -1,11 +1,16 @@
 import numpy as np
 import astropy.units as u
 from astropy.wcs import WCS
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, position_angle, get_moon 
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
+import os
+
+path = os.path.dirname(__file__)
+datapath = os.path.dirname(path)+'/data/'
 
 moon_radi = (1737.10 * u.km).to(u.au)
+
 
 def moon_edge(resolution=50):
     '''
@@ -30,13 +35,14 @@ def moon_terminator(resolution=50, b=0.5, k=1.005):
 
 
 def draw_moon_logo(ax,
+                   location,
                    az_frame,
                    moon,
                    sun,
                    loc_gcrs,
                    zoom_factor=20,
                    resolution=50,
-                   light_color=0.9,
+                   light_color=np.array([1.0, 253 / 255, 230 / 255]),
                    shadow_color=0.25,
                    k=1.005):
     '''
@@ -119,6 +125,7 @@ def draw_moon_logo(ax,
         light = edge[edge[:, 1] >= 0, :]
         shadow = edge[edge[:, 1] <= 0, :]
 
+    # moon phase affine transformation
     M_rotation = np.array(
         [[np.cos(light_side_angle), -np.sin(light_side_angle)],
          [np.sin(light_side_angle),
@@ -139,7 +146,7 @@ def draw_moon_logo(ax,
         light_codes[0] = mpath.Path.MOVETO
         light_path = mpath.Path(light, light_codes)
         light_patch = mpatches.PathPatch(light_path,
-                                         facecolor=[light_color] * 3,
+                                         facecolor=light_color,
                                          linewidth=0,
                                          zorder=999)
         ax.add_patch(light_patch)
@@ -150,7 +157,6 @@ def draw_moon_logo(ax,
         shadow = shadow.transform_to(az_frame)
         shadow = np.array([shadow.az.value, 90 - shadow.alt.value]).T
         shadow = shadow / 180 * np.pi
-
         shadow_codes = np.ones(len(shadow),
                                dtype=mpath.Path.code_type) * mpath.Path.LINETO
         shadow_codes[0] = mpath.Path.MOVETO
@@ -161,15 +167,42 @@ def draw_moon_logo(ax,
                                           zorder=999)
         ax.add_patch(shadow_patch)
 
+        # Lunar mare patch
+        moon_1h = get_moon(time=moon.obstime + 1 * u.h, location=location)
+        # a very dirty way to calculate moon's north pole's postion angle, Without considering moon's libration.
+        pos_angle = position_angle(moon.ra, moon.dec, moon_1h.ra,
+                                   moon_1h.dec) - np.pi / 2 * u.rad
+        # affine transformation for rotating by pos_angle
+        NP_rotation = np.array([[np.cos(pos_angle), -np.sin(pos_angle)],
+                                [np.sin(pos_angle),
+                                 np.cos(pos_angle)]])
+        for f in ['lm1.txt', 'lm2.txt', 'lm3.txt']:
+            lm = np.loadtxt(datapath + f)
+            lm = np.dot(NP_rotation, lm.T)
+            lm = moon_wcs.pixel_to_world(lm[0], lm[1])
+            lm = SkyCoord(lm.ra, lm.dec, frame=loc_gcrs)
+            lm = lm.transform_to(az_frame)
+            lm = np.array([lm.az.value, 90 - lm.alt.value]).T
+            lm = lm / 180 * np.pi
+            lm_codes = np.ones(len(lm),
+                               dtype=mpath.Path.code_type) * mpath.Path.LINETO
+            lm_codes[0] = mpath.Path.MOVETO
+            lm_path = mpath.Path(lm, lm_codes)
+            lm_patch = mpatches.PathPatch(lm_path,
+                                          facecolor=[0.5, 0.5, 0.5, 0.6],
+                                          linewidth=0,
+                                          zorder=1000)
+            ax.add_patch(lm_patch)
+
 
 if __name__ == '__main__':
     from astropy.coordinates import SkyCoord, EarthLocation, AltAz, GCRS, get_moon, get_body
     from astropy.time import Time
     import matplotlib.pyplot as plt
     import matplotlib.scale as mscale
-    from util.stereographic import StereographicZenithScale
+    from stereographic import StereographicZenithScale
     mscale.register_scale(StereographicZenithScale)
-    time = Time('2022-3-14 15:00:00')
+    time = Time('2022-3-10 12:00:00')
     # oberving location
     loc_lat = 25.62
     loc_lon = 101.13
@@ -182,18 +215,10 @@ if __name__ == '__main__':
     az = AltAz(obstime=time, location=location)
     sun = get_body('sun', time, location)
     moon = get_moon(time, location)
-    r = np.linspace(30, 60, 50) / 180 * np.pi
-    theta = np.linspace(0, 2 * np.pi, 50)
     plt.figure()
     plt.subplot(111, projection="polar")
-    plt.plot(
-        theta,
-        r,
-        '-',
-        lw=2,
-    )
     plt.yscale('stereographiczenith')
     ax = plt.gca()
     ax.set_theta_zero_location("N")
-    draw_moon_logo(ax, az, moon, sun, loc_gcrs, resolution=50)
+    draw_moon_logo(ax, location, az, moon, sun, loc_gcrs, resolution=50)
     plt.show()

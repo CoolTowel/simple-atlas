@@ -1,6 +1,10 @@
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 import numpy as np
+import os
+
+path = os.path.dirname(__file__)
+datapath = os.path.dirname(path) + '/data/'
 
 
 def bv2rgb(stars, key='B-V'):  # Thanks to https://stackoverflow.com/a/43105142
@@ -61,18 +65,25 @@ def mag2size(stars, key='Vmag', k_size=0.4, max_size=40, min_size=0.3):
     return s
 
 
-def draw_star(ax, az_frame, mag_lim=4, k_size= 0.4, zoom_factor=1):
-    bsc = Table.read('data/XHIP_6.fits')
-    stars = bsc[bsc['Vmag'] < mag_lim]
+def draw_star(ax,
+              az_frame,
+              mag_lim=5,
+              k_size=0.4,
+              zoom_factor=1,
+              constline=True):
+    stars = Table.read(datapath + 'XHIP_7.fits')
+    # stars = bsc[bsc['Vmag'] < mag_lim]
     stars_coord = SkyCoord(stars['RAdeg'],
                            stars['DEdeg'],
                            unit='degree',
                            frame='icrs').transform_to(az_frame)
-    colors = bv2rgb(stars)
-    sizes = mag2size(stars, k_size=k_size)
-    ax.scatter(stars_coord.az.rad,
-               np.pi / 2 - stars_coord.alt.rad,
-               s=zoom_factor*sizes,
+    mask = stars['Vmag'] < mag_lim
+    colors = bv2rgb(stars[mask])
+    sizes = mag2size(stars[mask], k_size=k_size) * zoom_factor
+    ax.scatter(stars_coord.az.rad[mask],
+               np.pi / 2 - stars_coord.alt.rad[mask],
+               s=sizes,
                c=colors,
                linewidths=0.0,
-               edgecolors=None)
+               edgecolors=None,
+               zorder=500)

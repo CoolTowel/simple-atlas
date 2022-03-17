@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from astropy.io import fits
 from reproject import reproject_interp
-from moon import draw_moon
+from util.moon import draw_moon
 from astropy.visualization.wcsaxes.frame import EllipticalFrame
 
 from astropy.visualization.wcsaxes import core

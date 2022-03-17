@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.scale as mscale
 import matplotlib.font_manager as fm
 from util import *
+
 import time as pytime
 start_time = pytime.time()
 
@@ -26,7 +27,7 @@ def skychart(time=None, location=None, show=False):
     Return skychart at a time in a location. Time should be an astropy.time.Time instance and location should be an astropy.coordinates.EarthLocation instance.'''
     # time
     if time is None:
-        time = Time.now()
+        time = Time.now()+5*u.h
         # time = Time('2022-12-23 8:00:00')
     # oberving location
     if location is None:
@@ -72,10 +73,13 @@ def skychart(time=None, location=None, show=False):
     ax.plot(eq[0],eq[1],zorder=-1,c=light_blue,lw=plt.rcParams['axes.linewidth'])
 
     # moon
-    moon_logo.draw_moon_logo(ax, az_frame, moon, sun, loc_gcrs,zoom_factor=10, resolution=40, light_color=0.9)
+    moon_logo.draw_moon_logo(ax,location, az_frame, moon, sun, loc_gcrs,zoom_factor=15, resolution=40)
 
     # Bright star
     star.draw_star(ax,az_frame)
+
+    # constellations
+    constellation.draw_constellation(ax,az_frame)
 
     plt.tight_layout()
     if show is True:
