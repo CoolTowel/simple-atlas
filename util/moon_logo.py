@@ -194,7 +194,7 @@ def draw_moon_logo(ax,
         lm_codes[0] = mpath.Path.MOVETO
         lm_path = mpath.Path(lm, lm_codes)
         lm_patch = mpatches.PathPatch(lm_path,
-                                        facecolor=[0.5, 0.5, 0.5, 0.6],
+                                        facecolor=[0.3, 0.3, 0.3, 0.4],
                                         linewidth=0,
                                         zorder=1000)
         ax.add_patch(lm_patch)
